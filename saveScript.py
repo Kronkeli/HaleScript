@@ -3,8 +3,8 @@ File which saves the script lines from development environment to
 actual script destination
 
 Params:
-- FILEPATH = path to the script file
-- FILENAME = Name of the file (set to be)
+- SRCPATH = path to the script file
+- DESTPATH = Name of the file (set to be)
 """
 
 import sys
