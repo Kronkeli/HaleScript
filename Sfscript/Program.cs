@@ -21,7 +21,7 @@ namespace ConsoleApplication1
         public GameScript() : base(null) { }
 
         /* SCRIPT STARTS HERE - COPY BELOW INTO THE SCRIPT WINDOW */
-
+        //hahaYES
         public IPlayer HALE;
         public string[] HALENAMES;
         private int HALETYPE;
@@ -551,6 +551,7 @@ namespace ConsoleApplication1
         //    }
 
         //}
+        //hahaNO
         /* SCRIPT ENDS HERE - COPY ABOVE INTO THE SCRIPT WINDOW */
 
 
