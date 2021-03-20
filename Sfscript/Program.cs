@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using SFDGameScriptInterface;
 using System.Numerics;
+using System.Drawing;
 
 // All available system namespaces in the ScriptAPI (as of Alpha 1.0.0).
 
@@ -53,13 +54,13 @@ namespace ConsoleApplication1
             timer1.SetRepeatCount(0);
             timer1.SetIntervalTime(200);
             timer1.SetScriptMethod("RemoveHaleItems");
-            timer1.Trigger();
+            // timer1.Trigger();
 
             IObjectTimerTrigger timer2 = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             timer2.SetRepeatCount(0);
             timer2.SetIntervalTime(1000);
             timer2.SetScriptMethod("DisplayHaleStatus");
-            timer2.Trigger();
+            // timer2.Trigger();
 
             // Player key input ( for hale teleport)
             Events.PlayerKeyInputCallback.Start(OnPlayerKeyInput);
@@ -87,8 +88,8 @@ namespace ConsoleApplication1
             HaleSniperTimer.SetScriptMethod("GiveSniperSnipur");
 
             // At the beginning of the game set next HALE
-            // SetHale();
-            // HelloHale();
+            SetHale();
+            HelloHale();
             ModGibZones();
         }
 
@@ -447,10 +448,10 @@ namespace ConsoleApplication1
             Game.RunCommand("/MSG " + "====================");
         }
 
-
-        public void HaleTrigger(TriggerArgs args)
+        // If falling thing is HALE, then tp to safety
+        public void KillZoneTrigger(TriggerArgs args)
         {
-
+            Game.RunCommand("/MSG " + "Jotain rajalla");
             if (args.Sender == HALE)
             {
                 int newHealth = (int)HALE.GetHealth() - 200;
@@ -468,15 +469,6 @@ namespace ConsoleApplication1
                     Game.RunCommand("/MSG " + "EN KUOLE SAATANA t. " + HALE.GetUser().Name);
                     HALE.SetWorldPosition(place);
                 }
-
-            }
-            else if (args.Sender is IPlayer)
-            {
-                ((IPlayer)args.Sender).Gib();
-            }
-            else if (args.Sender is IObject)
-            {
-                ((IObject)args.Sender).Destroy();
             }
         }
 
@@ -484,73 +476,60 @@ namespace ConsoleApplication1
         public void ModGibZones()
         {
             string mapName = Game.MapName;
+            Game.RunCommand("/MSG " + "Mappinimi on " + mapName);
             if ( mapName == "Hazardous" )
             {
-                IObject[] spawnAreas = Game.GetObjectsByName("SpawnPlayer");
-                foreach ( IObject spawnArea in spawnAreas)
-                {
-                    IObject obj = Game.CreateObject("Monitor00", spawnArea.GetWorldPosition(),0);
-                }
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-172, -128);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(52, 1);
+                SetSafeZone(position, sizeFactor);
             }
-            // IObject[] killZone = Game.getObjects("GibZone");
-            
+            else if ( mapName == "Police Station" )
+            {
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-740,-152);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(93, 1);
+                SetSafeZone(position, sizeFactor);
+            }
+            else if ( mapName == "Canals" )
+            {
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-212, -164);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(37, 2);
+                SetSafeZone(position, sizeFactor);
+            }
+            else if ( mapName == "Castle Courtyard" )
+            {
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(360, -300);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(32, 2);
+                SetSafeZone(position, sizeFactor);
+            }
+            else if ( mapName == "Rooftops" )
+            {
+                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-380, -160);
+                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(256, -160);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(48, 2);
+                SetSafeZone(position1, sizeFactor);
+                SetSafeZone(position2, sizeFactor);
+            }
+            else if (mapName == "Chemical Plant")
+            {
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -128);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(13, 1);
+                SetSafeZone(position, sizeFactor);
+            }
         }
 
         // Creates new TP-zone to save HALE from falling into death (with penalty of losing life)
-        public void SetSafeZone(SFDGameScriptInterface.Vector2 pos)
+        public void SetSafeZone(SFDGameScriptInterface.Vector2 pos, SFDGameScriptInterface.Point sizeFactor)
         {
             // Create a new trigger with the 
-            IObjectAreaTrigger saveHaleLife = (IObjectAreaTrigger)Game.CreateObject("AreaTrigger", pos);
-            saveHaleLife.SetOnEnterMethod("KillZoneTrigger");
+            IObjectAreaTrigger saveHaleZone = (IObjectAreaTrigger)Game.CreateObject("AreaTrigger", pos);
+            saveHaleZone.SetOnEnterMethod("KillZoneTrigger");
+            saveHaleZone.SetSizeFactor(sizeFactor);
+            //Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
+            //Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
+            //Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
             // saveHaleLife.SetActivateTriggersOnEnter()
         }
 
-        //public void KillZoneTrigger(TriggerArgs args)
-        //{
-        //    Game.RunCommand("MSG " + "kkkkkkk");
-
-        //    if (args.Sender == HALE)
-        //    {
-        //        int rnd = m_rnd.Next(0, 3);
-        //        int newHealth = (int)HALE.GetHealth() - 200;
-        //        HALE.SetHealth(newHealth);
-
-        //        if (newHealth < 0)
-        //        {
-        //            Game.RunCommand("/MSG " + "Ai saatana :( t. " + HALE.GetUser().Name);
-        //        }
-        //        else
-        //        {
-        //            Game.RunCommand("/MSG " + "EN KUOLE SAATANA t. " + HALE.GetUser().Name);
-        //        }
-
-        //        if (rnd == 0)
-        //        {
-        //            HALE.SetWorldPosition(new SFDGameScriptInterface.Vector2(-248, -9));
-        //        }
-        //        else if (rnd == 1)
-        //        {
-        //            HALE.SetWorldPosition(new SFDGameScriptInterface.Vector2(152, 23));
-        //        }
-        //        else if (rnd == 2)
-        //        {
-        //            HALE.SetWorldPosition(new SFDGameScriptInterface.Vector2(16, 79));
-        //        }
-        //        else
-        //        {
-        //            HALE.SetWorldPosition(new SFDGameScriptInterface.Vector2(248, -113));
-        //        }
-        //    }
-        //    else if (args.Sender is IPlayer)
-        //    {
-        //        ((IPlayer)args.Sender).Gib();
-        //    }
-        //    else if (args.Sender is IObject)
-        //    {
-        //        ((IObject)args.Sender).Destroy();
-        //    }
-
-        //}
         //hahaNO
         /* SCRIPT ENDS HERE - COPY ABOVE INTO THE SCRIPT WINDOW */
 
