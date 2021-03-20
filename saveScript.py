@@ -10,7 +10,7 @@ Params:
 import sys
 
 # Set arguments to constant variables0
-SRCPATH = "C:\\Users\\samus\\source\\repos\\Sfscript\\Sfscript\\Program.cs"
+SRCPATH = "Sfscript\\Program.cs"
 DESTPATH = "C:\\Users\\samus\\Documents\\Superfighters Deluxe\\Scripts\\hale.txt"
 
 def main():
