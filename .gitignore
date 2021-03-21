@@ -2,3 +2,4 @@
 *.nuget.props
 Debug
 obj
+.env
