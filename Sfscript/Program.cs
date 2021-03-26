@@ -28,12 +28,17 @@ namespace ConsoleApplication1
         private int HALETYPE;
         public int last_hale_hp;
         public Random m_rnd = null;
+
         public float lastTeleported;
+        public float lastWarudod;
         public float tpCooldown;
+        public float warudoCooldown;
         public bool tpEnabled;
+        public bool warudoEnabled;
 
         public IObjectTimerTrigger HaleSniperTimer;
         public IObjectTimerTrigger HaleMovementStopper;
+        public IObjectTimerTrigger PlayerMovementStopper;
         public IObjectTimerTrigger HaleStartCooldown;
 
         // Run code before triggers marked with "Activate on startup" but after players spawn from SpawnMarkers.
@@ -41,13 +46,16 @@ namespace ConsoleApplication1
         {
             m_rnd = new Random((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000);
 
-            // By default HALE cannot tp
+            // By default HALE cannot tp or ZA WARUDO
             tpEnabled = false;
-            HALENAMES = new string[4];
+            warudoEnabled = false;
+
+            HALENAMES = new string[5];
             HALENAMES[0] = "Saxton Fale";
             HALENAMES[1] = "Sin Feaster";
             HALENAMES[2] = "Speedy Fale";
-            HALENAMES[3] = "Snipur Faggot";
+            HALENAMES[3] = "DIO";
+            HALENAMES[4] = "Snipur Faggot";
             // { "Saxton Fale", "Sin Feaster", "Snipur Faggot"};
 
             // Every 200ms, delete all items from HALE
@@ -55,26 +63,27 @@ namespace ConsoleApplication1
             timer1.SetRepeatCount(0);
             timer1.SetIntervalTime(200);
             timer1.SetScriptMethod("RemoveHaleItems");
-            //timer1.Trigger();
+            timer1.Trigger();
 
             IObjectTimerTrigger timer2 = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             timer2.SetRepeatCount(0);
             timer2.SetIntervalTime(1000);
             timer2.SetScriptMethod("DisplayHaleStatus");
-            //timer2.Trigger();
+            timer2.Trigger();
 
             // Player key input ( for hale teleport)
             Events.PlayerKeyInputCallback.Start(OnPlayerKeyInput);
 
             // Set lastTeleported to game start
             lastTeleported = Game.TotalElapsedGameTime;
+            lastWarudod = Game.TotalElapsedGameTime;
 
             // Trigger for HALE action cooldown. 
             HaleMovementStopper = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             HaleMovementStopper.SetRepeatCount(1);
             HaleMovementStopper.SetIntervalTime(500);
             HaleMovementStopper.SetScriptMethod("ToggleHaleMovement");
-            // HaleMovementStopper.Trigger();
+            HaleMovementStopper.Trigger();
 
             // Trigger for HALE beginning cooldown. In the beginning set to stop HALE for 5s
             HaleStartCooldown = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
@@ -88,9 +97,15 @@ namespace ConsoleApplication1
             HaleSniperTimer.SetIntervalTime(20000);
             HaleSniperTimer.SetScriptMethod("GiveSniperSnipur");
 
+            // Trigger for disabling player input for 5 seconds (ZA WARUDO). 
+            PlayerMovementStopper = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
+            PlayerMovementStopper.SetRepeatCount(1);
+            PlayerMovementStopper.SetIntervalTime(1667);
+            PlayerMovementStopper.SetScriptMethod("TogglePlayerMovement");
+
             // At the beginning of the game set next HALE
-            //SetHale();
-            //HelloHale();
+            SetHale();
+            HelloHale();
             ModGibZones();
         }
 
@@ -172,7 +187,7 @@ namespace ConsoleApplication1
             HALE = next_hale;
             HALETYPE = next_type;
             
-            // HALETYPE = 1;
+            // HALETYPE = 3;
             HALE.SetTeam(PlayerTeam.Team2);
 
             // Calculating hale HP based on playeramount and getting the modifier for HALE to apply changes
@@ -217,8 +232,17 @@ namespace ConsoleApplication1
                     HALE.SetModifiers(modify);
                     break;
 
-                // Snipur Faggot
+                // DIO
                 case 3:
+                    warudoEnabled = true;
+                    warudoCooldown = 20000;
+                    SetDIOClothing(ref HALE);
+                    SetHaleModifiers(ref modify, haleHP, 1.2f, 1.2f, 3f, 1f, 2f);
+                    HALE.SetModifiers(modify);
+                    break;
+
+                // Snipur Faggot
+                case 4:
                     tpEnabled = true;
                     tpCooldown = 10000;
                     HaleSniperTimer.Trigger();
@@ -230,7 +254,6 @@ namespace ConsoleApplication1
             }
 
             // Set beginning movement cooldown for all HALES.
-            HALE.SetInputEnabled(false);
             HaleStartCooldown.Trigger();
         }
 
@@ -262,9 +285,8 @@ namespace ConsoleApplication1
             haleProfile.Hands = null;
             haleProfile.Legs = null;
             haleProfile.Feet = new IProfileClothingItem("Boots", "ClothingBrown");
-            haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3");
+            haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3", "ClothingBrown");
             halePlayer.SetProfile(haleProfile);
-            // Changing the skin color to light?
         }
         
         public void SetSinClothing(ref IPlayer halePlayer)
@@ -279,22 +301,34 @@ namespace ConsoleApplication1
             haleProfile.Feet = null;
             haleProfile.Skin = new IProfileClothingItem("Zombie", "Skin1");
             halePlayer.SetProfile(haleProfile);
-            // Changing the skin color to light?
         }
 
         public void SetSpeedClothing(ref IPlayer halePlayer)
         {
             IProfile haleProfile = halePlayer.GetProfile();
             haleProfile.Accesory = null;
-            haleProfile.Head = new IProfileClothingItem("WoolCap", "ClothingRed"); ;
+            haleProfile.Head = new IProfileClothingItem("WoolCap", "ClothingRed");
             haleProfile.ChestOver = null;
             haleProfile.ChestUnder = new IProfileClothingItem("Tshirt", "ClothingBlack");
             haleProfile.Hands = null;
-            haleProfile.Legs = new IProfileClothingItem("Shorts", "ClothingRed"); ;
-            haleProfile.Feet = new IProfileClothingItem("Shoes", "ClothingBlack"); ;
+            haleProfile.Legs = new IProfileClothingItem("Shorts", "ClothingRed");
+            haleProfile.Feet = new IProfileClothingItem("Shoes", "ClothingBlack");
             haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3");
             halePlayer.SetProfile(haleProfile);
-            // Changing the skin color to light?
+        }
+
+        public void SetDIOClothing(ref IPlayer halePlayer)
+        {
+            IProfile haleProfile = halePlayer.GetProfile();
+            haleProfile.Accesory = null;
+            haleProfile.Head = new IProfileClothingItem("Beret", "ClothingYellow", "ClothingGreen");
+            haleProfile.ChestOver = new IProfileClothingItem("BlazerwithShirt", "ClothingYellow", "ClothingBlack");
+            haleProfile.ChestUnder = new IProfileClothingItem("ShirtWithTie", "ClothingYellow", "ClothingBlack");
+            haleProfile.Hands = new IProfileClothingItem("FingerlessGloves(Black)", "ClothingYellow");
+            haleProfile.Legs = new IProfileClothingItem("Pants", "ClothingYellow");
+            haleProfile.Feet = new IProfileClothingItem("Boots(black)", "ClothingYellow");
+            haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3");
+            halePlayer.SetProfile(haleProfile);
         }
 
         public void RemoveHaleItems(TriggerArgs args)
@@ -330,6 +364,15 @@ namespace ConsoleApplication1
             {
                 Game.ShowPopupMessage("Hale HP: " + (int)Math.Round(HALE.GetModifiers().CurrentHealth));
             }
+            else if( HALETYPE == 3 )
+            {
+                float timeLeft = warudoCooldown - (Game.TotalElapsedGameTime - lastWarudod);
+                if ( timeLeft < 0 )
+                {
+                    timeLeft = 0;
+                }
+                Game.ShowPopupMessage("Hale HP: " + (int)Math.Round(HALE.GetModifiers().CurrentHealth) + " ZA WARUDO COOLDOWN: " + (int)Math.Round(timeLeft / 1000) + "s");
+            }
             else
             {
                 float timeLeft = tpCooldown - (Game.TotalElapsedGameTime - lastTeleported);
@@ -350,6 +393,16 @@ namespace ConsoleApplication1
             else
             {
                 HALE.SetInputEnabled(true);
+            }
+        }
+
+        public void TogglePlayerMovement(TriggerArgs args)
+        {
+            Game.RunCommand("/SLOMO " + "0");
+            IPlayer[] players = Game.GetPlayers();
+            foreach ( IPlayer plr in players )
+            {
+                plr.SetInputEnabled(true);
             }
         }
 
@@ -404,7 +457,6 @@ namespace ConsoleApplication1
             int rnd = m_rnd.Next(0, spawnAreas.Length);
             SFDGameScriptInterface.Vector2 place = spawnAreas[rnd].GetWorldPosition();
             HALE.SetWorldPosition(place);
-            // HaleMovementStopper.Trigger();
         }
 
         public void OnPlayerKeyInput(IPlayer player, VirtualKeyInfo[] keyEvents)
@@ -432,6 +484,21 @@ namespace ConsoleApplication1
                         }
                         break;
                     }
+                    else if ( player == HALE && (Game.TotalElapsedGameTime - lastWarudod) > warudoCooldown && warudoEnabled == true )
+                    {
+                        lastWarudod = Game.TotalElapsedGameTime;
+                        IPlayer[] players = Game.GetPlayers();
+                        foreach ( IPlayer plr in players )
+                        {
+                            if ( plr != HALE )
+                            {
+                                plr.SetInputEnabled(false);
+                                Game.PlaySound("ChurchBell1", plr.GetWorldPosition(), 1);
+                            }
+                        }
+                        Game.RunCommand("/SLOMO " + "1");
+                        PlayerMovementStopper.Trigger();
+                    }
                 }
             }
         }
@@ -452,7 +519,7 @@ namespace ConsoleApplication1
         // If falling thing is HALE, then tp to safety
         public void KillZoneTrigger(TriggerArgs args)
         {
-            Game.RunCommand("/MSG " + "Jotain rajalla");
+            // Game.RunCommand("/MSG " + "Jotain rajalla");
             if (args.Sender == HALE)
             {
                 int newHealth = (int)HALE.GetHealth() - 50;
@@ -477,7 +544,6 @@ namespace ConsoleApplication1
         public void ModGibZones()
         {
             string mapName = Game.MapName;
-            Game.RunCommand("/MSG " + "Mappinimi on " + mapName);
             if ( mapName == "Hazardous" )
             {
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-172, -120);
@@ -560,7 +626,7 @@ namespace ConsoleApplication1
             }
             else 
             {
-                Game.RunCommand("/MSG " + "Halen turvaverkko: Off.");
+                Game.RunCommand("/MSG " + "Mapissa " + mapName + ": Halen turvaverkko is off");
             }
         }
 
@@ -571,9 +637,9 @@ namespace ConsoleApplication1
             IObjectAreaTrigger saveHaleZone = (IObjectAreaTrigger)Game.CreateObject("AreaTrigger", pos);
             saveHaleZone.SetOnEnterMethod("KillZoneTrigger");
             saveHaleZone.SetSizeFactor(sizeFactor);
-            Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
-            Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
-            Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
+            // Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
+            // Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
+            // Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
         }
 
         //hahaNO
