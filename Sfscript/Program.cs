@@ -26,7 +26,7 @@ namespace ConsoleApplication1
         public IPlayer HALE;
         public string[] HALENAMES;
         private int HALETYPE;
-        public int last_hale_hp;
+        public float lastHaleHp;
         public Random m_rnd = null;
 
         public float lastTeleported;
@@ -203,6 +203,7 @@ namespace ConsoleApplication1
             {
                 haleHP = 4 * hpConstant + (players.Length - 4) * hpConstant / 2;
             }
+            lastHaleHp = haleHP;
 
             Game.RunCommand("/MSG " + " - - - Minä olen hirmuinen " + HALENAMES[HALETYPE] + " - - - ");
 
@@ -345,6 +346,14 @@ namespace ConsoleApplication1
             }
             HALE.RemoveWeaponItemType(WeaponItemType.Thrown);
             HALE.RemoveWeaponItemType(WeaponItemType.Powerup);
+
+            // Check if Hale has picked HP and put penalty if has
+            if ( lastHaleHp > HALE.GetHealth() )
+            {
+                Game.RunCommand("/MSG " + "HALE poimi HP joten HALE menetti 100hp");
+                HALE.SetHealth(HALE.GetHealth() - 100 );
+            }
+            lastHaleHp = HALE.GetHealth();
         }
 
         public void SetHaleCandidates()
