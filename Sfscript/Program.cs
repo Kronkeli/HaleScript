@@ -590,7 +590,7 @@ namespace ConsoleApplication1
             }
             else if (mapName == "Chemical Plant")
             {
-                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -104);
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -112);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(13, 3);
                 SetSafeZone(position, sizeFactor);
             }
