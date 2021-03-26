@@ -348,7 +348,7 @@ namespace ConsoleApplication1
             HALE.RemoveWeaponItemType(WeaponItemType.Powerup);
 
             // Check if Hale has picked HP and put penalty if has
-            if ( lastHaleHp > HALE.GetHealth() )
+            if ( lastHaleHp < HALE.GetHealth() )
             {
                 Game.RunCommand("/MSG " + "HALE poimi HP joten HALE menetti 100hp");
                 HALE.SetHealth(HALE.GetHealth() - 100 );
