@@ -26,6 +26,7 @@ namespace ConsoleApplication1
         public IPlayer HALE;
         public string[] HALENAMES;
         private int HALETYPE;
+        public int last_hale_hp;
         public Random m_rnd = null;
         public float lastTeleported;
         public float tpCooldown;
@@ -54,13 +55,13 @@ namespace ConsoleApplication1
             timer1.SetRepeatCount(0);
             timer1.SetIntervalTime(200);
             timer1.SetScriptMethod("RemoveHaleItems");
-            // timer1.Trigger();
+            //timer1.Trigger();
 
             IObjectTimerTrigger timer2 = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             timer2.SetRepeatCount(0);
             timer2.SetIntervalTime(1000);
             timer2.SetScriptMethod("DisplayHaleStatus");
-            // timer2.Trigger();
+            //timer2.Trigger();
 
             // Player key input ( for hale teleport)
             Events.PlayerKeyInputCallback.Start(OnPlayerKeyInput);
@@ -73,7 +74,7 @@ namespace ConsoleApplication1
             HaleMovementStopper.SetRepeatCount(1);
             HaleMovementStopper.SetIntervalTime(500);
             HaleMovementStopper.SetScriptMethod("ToggleHaleMovement");
-            //HaleMovementStopper.Trigger();
+            // HaleMovementStopper.Trigger();
 
             // Trigger for HALE beginning cooldown. In the beginning set to stop HALE for 5s
             HaleStartCooldown = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
@@ -88,8 +89,8 @@ namespace ConsoleApplication1
             HaleSniperTimer.SetScriptMethod("GiveSniperSnipur");
 
             // At the beginning of the game set next HALE
-            SetHale();
-            HelloHale();
+            //SetHale();
+            //HelloHale();
             ModGibZones();
         }
 
@@ -205,7 +206,7 @@ namespace ConsoleApplication1
                     SetSinClothing(ref HALE);
                     tpEnabled = true;
                     tpCooldown = 20000;
-                    SetHaleModifiers(ref modify, haleHP, 1.4f, 1.4f, 2f, 5f, 1f);
+                    SetHaleModifiers(ref modify, haleHP, 1.2f, 1.2f, 2f, 5f, 1.5f);
                     HALE.SetModifiers(modify);
                     break;
 
@@ -454,7 +455,7 @@ namespace ConsoleApplication1
             Game.RunCommand("/MSG " + "Jotain rajalla");
             if (args.Sender == HALE)
             {
-                int newHealth = (int)HALE.GetHealth() - 200;
+                int newHealth = (int)HALE.GetHealth() - 50;
                 HALE.SetHealth(newHealth);
                 IObject[] spawnAreas = Game.GetObjectsByName("SpawnPlayer");
                 int rnd = m_rnd.Next(0, spawnAreas.Length);
@@ -479,15 +480,20 @@ namespace ConsoleApplication1
             Game.RunCommand("/MSG " + "Mappinimi on " + mapName);
             if ( mapName == "Hazardous" )
             {
-                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-172, -128);
-                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(52, 1);
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-172, -120);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(52, 2);
                 SetSafeZone(position, sizeFactor);
             }
             else if ( mapName == "Police Station" )
             {
-                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-740,-152);
-                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(93, 1);
-                SetSafeZone(position, sizeFactor);
+                // Bottom
+                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-740,-128);
+                SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(93, 3);
+                // Left
+                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(-740,230);
+                SFDGameScriptInterface.Point sizeFactor2 = new SFDGameScriptInterface.Point(5, 45);
+                SetSafeZone(position1, sizeFactor1);
+                SetSafeZone(position2, sizeFactor2);
             }
             else if ( mapName == "Canals" )
             {
@@ -503,17 +509,58 @@ namespace ConsoleApplication1
             }
             else if ( mapName == "Rooftops" )
             {
-                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-380, -160);
-                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(256, -160);
-                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(48, 2);
-                SetSafeZone(position1, sizeFactor);
-                SetSafeZone(position2, sizeFactor);
+                // Bottom
+                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
+                // Left
+                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(-500, 330);
+                SFDGameScriptInterface.Point sizeFactor2 = new SFDGameScriptInterface.Point(5, 67);
+                // Right - ei toimi?
+                SFDGameScriptInterface.Vector2 position3 = new SFDGameScriptInterface.Vector2(500, 330);
+                SFDGameScriptInterface.Point sizeFactor3 = new SFDGameScriptInterface.Point(5, 67);
+                SetSafeZone(position1, sizeFactor1);
+                SetSafeZone(position2, sizeFactor2);
+                SetSafeZone(position3, sizeFactor3);
             }
             else if (mapName == "Chemical Plant")
             {
-                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -128);
-                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(13, 1);
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -104);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(13, 3);
                 SetSafeZone(position, sizeFactor);
+            }
+            else if( mapName == "Sector 8" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
+                // Left
+                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(-500, 330);
+                SFDGameScriptInterface.Point sizeFactor2 = new SFDGameScriptInterface.Point(5, 67);
+                // Right
+                SFDGameScriptInterface.Vector2 position3 = new SFDGameScriptInterface.Vector2(500, 330);
+                SFDGameScriptInterface.Point sizeFactor3 = new SFDGameScriptInterface.Point(5, 67);
+                SetSafeZone(position1, sizeFactor1);
+                SetSafeZone(position2, sizeFactor2);
+                SetSafeZone(position3, sizeFactor3);
+            }
+            else if( mapName == "Rooftops II" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
+                // Left
+                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(-500, 330);
+                SFDGameScriptInterface.Point sizeFactor2 = new SFDGameScriptInterface.Point(5, 67);
+                // Right
+                SFDGameScriptInterface.Vector2 position3 = new SFDGameScriptInterface.Vector2(500, 330);
+                SFDGameScriptInterface.Point sizeFactor3 = new SFDGameScriptInterface.Point(5, 67);
+                SetSafeZone(position1, sizeFactor1);
+                SetSafeZone(position2, sizeFactor2);
+                SetSafeZone(position3, sizeFactor3);
+            }
+            else 
+            {
+                Game.RunCommand("/MSG " + "Halen turvaverkko: Off.");
             }
         }
 
@@ -524,10 +571,9 @@ namespace ConsoleApplication1
             IObjectAreaTrigger saveHaleZone = (IObjectAreaTrigger)Game.CreateObject("AreaTrigger", pos);
             saveHaleZone.SetOnEnterMethod("KillZoneTrigger");
             saveHaleZone.SetSizeFactor(sizeFactor);
-            //Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
-            //Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
-            //Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
-            // saveHaleLife.SetActivateTriggersOnEnter()
+            Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
+            Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
+            Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
         }
 
         //hahaNO

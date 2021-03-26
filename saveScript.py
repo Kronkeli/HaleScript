@@ -15,7 +15,7 @@ SRCPATH = "Sfscript\\Program.cs"
 
 # 'Cooler Daniel' way to do it, but needs pip installing..
 # from dotenv import load_dotenv
-# load_dotenv()
+# load_dotenv() 
 # DESTPATH = os.getenv('DESTPATH')
 
 # 'Cool Daniel'
@@ -57,6 +57,8 @@ def main():
     destfile = open(DESTPATH, "w")
     destfile.write(resultString)
     destfile.close()
+
+    print("Done!")
 
 
 if(not abort):
