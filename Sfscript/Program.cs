@@ -238,7 +238,7 @@ namespace ConsoleApplication1
                     warudoEnabled = true;
                     warudoCooldown = 20000;
                     SetDIOClothing(ref HALE);
-                    SetHaleModifiers(ref modify, haleHP, 1.2f, 1.2f, 3f, 1f, 2f);
+                    SetHaleModifiers(ref modify, haleHP, 1.2f, 1.2f, 3f, 3f, 2f);
                     HALE.SetModifiers(modify);
                     break;
 
@@ -350,8 +350,8 @@ namespace ConsoleApplication1
             // Check if Hale has picked HP and put penalty if has
             if ( lastHaleHp < HALE.GetHealth() )
             {
-                Game.RunCommand("/MSG " + "HALE poimi HP joten HALE menetti 100hp");
-                HALE.SetHealth(HALE.GetHealth() - 100 );
+                Game.RunCommand("/MSG " + "HALE poimi HP joten HALE menetti 150hp");
+                HALE.SetHealth(HALE.GetHealth() - 150 );
             }
             lastHaleHp = HALE.GetHealth();
         }
@@ -561,6 +561,12 @@ namespace ConsoleApplication1
             }
             else if ( mapName == "Police Station" )
             {
+                Game.RunCommand("/MAPROTATION " + "10");
+
+                for (int i = 0; i < 50; i++)
+                {
+                    Game.RunCommand("/MSG " + "nothing suspicious here...");
+                }
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-740,-128);
                 SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(93, 3);
@@ -599,11 +605,11 @@ namespace ConsoleApplication1
             }
             else if (mapName == "Chemical Plant")
             {
-                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -112);
-                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(13, 3);
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -125);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(12, 3);
                 SetSafeZone(position, sizeFactor);
             }
-            else if( mapName == "Sector 8" )
+            else if ( mapName == "Sector 8" )
             {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
@@ -618,7 +624,7 @@ namespace ConsoleApplication1
                 SetSafeZone(position2, sizeFactor2);
                 SetSafeZone(position3, sizeFactor3);
             }
-            else if( mapName == "Rooftops II" )
+            else if ( mapName == "Rooftops II" )
             {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
@@ -633,7 +639,32 @@ namespace ConsoleApplication1
                 SetSafeZone(position2, sizeFactor2);
                 SetSafeZone(position3, sizeFactor3);
             }
-            else 
+            else if ( mapName == "Heavy Equipment" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
+                // Right
+                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(500, 330);
+                SFDGameScriptInterface.Point sizeFactor2 = new SFDGameScriptInterface.Point(5, 67);
+                SetSafeZone(position1, sizeFactor1);
+                SetSafeZone(position2, sizeFactor2);
+            }
+            else if ( mapName == "Plant 47" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(132, -172);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(16, 3);
+                SetSafeZone(position, sizeFactor);
+            }
+            else if ( mapName == "Old Warehouse" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
+                SetSafeZone(position, sizeFactor);
+            }
+            else
             {
                 Game.RunCommand("/MSG " + "Mapissa " + mapName + ": Halen turvaverkko is off");
             }
