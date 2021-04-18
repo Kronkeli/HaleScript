@@ -10,6 +10,11 @@ using System.Drawing;
 
 // All available system namespaces in the ScriptAPI (as of Alpha 1.0.0).
 
+// ****** IMPORTANT *******
+// The script contains DEVMODE-variable for accessing script in test mode
+// DEVMODE = true --> Development mode on
+// DEVMODE = false --> Development mode off
+
 
 namespace ConsoleApplication1
 {
@@ -48,7 +53,7 @@ namespace ConsoleApplication1
         public void OnStartup()
         {
             // Bool variable to set DEV mode (1 player in game is HALE)
-            DEVMODE = true;
+            DEVMODE = false;
 
             m_rnd = new Random((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000);
 
@@ -110,7 +115,6 @@ namespace ConsoleApplication1
             // At the beginning of the game set next HALE
             SetHale();
             HelloHale();
-            ModGibZones();
         }
 
         private void SetHale()
@@ -134,20 +138,21 @@ namespace ConsoleApplication1
                 plr.SetModifiers(plrmodifier);
             }
 
-            // Choosing the next Hale and type of HALE
+            // Check if Local Storage contains needed items (halecandidates and last_hale)
             if (!Game.LocalStorage.ContainsKey("halecandidates"))
             {
-                Game.RunCommand("/MSG " + "Alustetaan halejonotuslista nyk. pelaajilla. (Ei toteutettu pidemmälle vielä)");
+                Game.RunCommand("/MSG " + "Local storage doesn't contain the 'halecandidates' key, so let's add it.");
                 SetHaleCandidates();
+            }
+            if (!Game.LocalStorage.ContainsKey("last_hale"))
+            {
+                Game.RunCommand("/MSG " + "Local storage doesn't contain the 'last_hale' key, so let's add it");
+                Game.LocalStorage.SetItem("last_hale", players[0].Name);
             }
             string[] haleCandidates = (string[])Game.LocalStorage.GetItem("halecandidates");
 
-            // Print halecandidates list from local storage
-            Game.RunCommand("/MSG " + "Halekandidaatit:");
-            foreach (string name in haleCandidates )
-            {
-                Game.RunCommand("/MSG " + "- " + name);
-            }
+            // Synchronize haleCandidates queue to the players currently in server
+            SynchronizeHaleCandidates(players, haleCandidates);
 
             string next_hale_name = haleCandidates[ (m_rnd.Next(((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000)) + (int)DateTime.Now.Millisecond) % haleCandidates.Length];
             IPlayer next_hale = players[0];
@@ -157,39 +162,27 @@ namespace ConsoleApplication1
             {
                 // Check if storage contains last_hale. If it does make sure that same person isn't hale again.
                 bool chooseAgain = false;
-                if ( !Game.LocalStorage.ContainsKey("last_hale") )
+                do
                 {
-                    Game.RunCommand("/MSG " + "Local storagesta ei löydy avainta 'last hale', joten tehdään se");
-                    Game.LocalStorage.SetItem("last_hale", next_hale_name);
-                }
-                else
-                {
-                    do
+                    chooseAgain = false;
+                    next_hale_name = haleCandidates[(m_rnd.Next(((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000) + random_index ) + (int)DateTime.Now.Millisecond) % haleCandidates.Length];
+                    if ((string)Game.LocalStorage.GetItem("last_hale") == next_hale_name)
                     {
-                        chooseAgain = false;
-                        next_hale_name = haleCandidates[(m_rnd.Next(((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000) + random_index ) + (int)DateTime.Now.Millisecond) % haleCandidates.Length];
-                        if ((string)Game.LocalStorage.GetItem("last_hale") == next_hale_name)
+                        Game.RunCommand("/MSG " + "Sama hale kuin viimeksi --> vaihtoon");
+                        chooseAgain = true;
+                    }
+                    foreach (IPlayer plr in players)
+                    {
+                        if (plr.Name == next_hale_name )
                         {
-                            Game.RunCommand("/MSG " + "Sama hale kuin viimeksi --> vaihtoon");
-                            chooseAgain = true;
+                            next_hale = plr;
                         }
-                        foreach (IPlayer plr in players)
-                        {
-                            if (plr.Name == next_hale_name )
-                            {
-                                next_hale = plr;
-                            }
-                        }
-                        random_index++;
-                    } while (chooseAgain);
-                }
-
+                    }
+                    random_index++;
+                } while ( chooseAgain & random_index < 10 );
+                
                 // Delete new hale from halecandidates and update 'last_hale' in localstorage
-                haleCandidates = haleCandidates.Where((source, index) => source != next_hale_name).ToArray();
-
-                // Save changes to LocalStorage
-                Game.LocalStorage.SetItem("halecandidates", haleCandidates);
-                Game.LocalStorage.SetItem("last_hale", next_hale_name);
+                EraseFromHaleCandidates(next_hale_name);
             }
 
             HALE = next_hale;
@@ -392,6 +385,44 @@ namespace ConsoleApplication1
             Game.LocalStorage.SetItem("halecandidates", candidates);
         }
 
+        public void SynchronizeHaleCandidates(IPlayer[] players, string[] haleCandidates)
+        {
+            foreach (string name in haleCandidates )
+            {
+                // Check if player from haleCandidates is on server.
+                // If player is, print the name on game.
+                // If player isn't, delete him from haleCandidates list (in local storage).
+                bool playerNotFound = true;
+                foreach( IPlayer plr in players )
+                {
+                    if ( plr.Name  == name )
+                    {
+                        playerNotFound = false;
+                    }
+                }
+                if ( playerNotFound )
+                {
+                    Game.RunCommand("/MSG " + " Delet this: " + name);
+                    EraseFromHaleCandidates(name);
+                }
+                else {
+                    Game.RunCommand("/MSG " + "- " + name);
+                }
+            }
+        }
+
+        public void EraseFromHaleCandidates(string nameToErase)
+        {
+            string[] haleCandidates = (string[])Game.LocalStorage.GetItem("halecandidates");
+            
+            // Delete new hale from halecandidates and update 'last_hale' in localstorage
+            haleCandidates = haleCandidates.Where((source, index) => source != nameToErase).ToArray();
+
+            // Save changes to LocalStorage
+            Game.LocalStorage.SetItem("halecandidates", haleCandidates);
+            Game.LocalStorage.SetItem("last_hale", nameToErase);
+        }
+
         public void DisplayHaleStatus(TriggerArgs args)
         {
             if (HALETYPE == 0 || HALETYPE == 2)
@@ -449,6 +480,7 @@ namespace ConsoleApplication1
         // Run code after triggers marked with "Activate on startup".
         public void AfterStartup()
         {
+            ModGibZones();
             string[] halecandidates = (string[])Game.LocalStorage.GetItem("halecandidates");
             if ( halecandidates.Length == 0)
             {
@@ -584,12 +616,12 @@ namespace ConsoleApplication1
             }
             else if ( mapName == "Police Station" )
             {
-                Game.RunCommand("/MAPROTATION " + "10");
+                // Game.RunCommand("/MAPROTATION " + "10");
 
-                for (int i = 0; i < 100; i++)
-                {
-                    Game.RunCommand("/MSG " + "nothing suspicious here...");
-                }
+                // for (int i = 0; i < 100; i++)
+                // {
+                //     Game.RunCommand("/MSG " + "nothing suspicious here...");
+                // }
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-740,-128);
                 SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(93, 3);
@@ -628,13 +660,10 @@ namespace ConsoleApplication1
             }
             else if (mapName == "Chemical Plant")
             {
-                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -125);
-                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(12, 3);
+                // Left acid container
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -120);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(14, 3);
                 SetSafeZone(position, sizeFactor);
-                // SFDGameScriptInterface.Vector2 positionAcid = new SFDGameScriptInterface.Vector2(-200, -200);
-                // IObject acidArea = Game.GetObject(955);
-                // Game.RunCommand("/MSG " + "lol + " + acidArea.GetWorldPosition() );
-                // acidArea.SetWorldPosition(positionAcid);
             }
             else if ( mapName == "Sector 8" )
             {
@@ -699,6 +728,22 @@ namespace ConsoleApplication1
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
                 SetSafeZone(position, sizeFactor);
             }
+            else if ( mapName == "Pistons" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
+                SetSafeZone(position, sizeFactor);
+            }
+            // else if ( mapName == "East Warehouse" )
+            // {
+            //     // Bottom
+            //     SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
+            //     SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
+            //     SetSafeZone(position, sizeFactor);
+
+            //     // Left??
+            // }
             else
             {
                 Game.RunCommand("/MSG " + "Mapissa " + mapName + ": Halen turvaverkko is off");
@@ -712,9 +757,12 @@ namespace ConsoleApplication1
             IObjectAreaTrigger saveHaleZone = (IObjectAreaTrigger)Game.CreateObject("AreaTrigger", pos);
             saveHaleZone.SetOnEnterMethod("KillZoneTrigger");
             saveHaleZone.SetSizeFactor(sizeFactor);
-            Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
-            Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
-            Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
+            if ( DEVMODE )
+            {
+                Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
+                Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
+                Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
+            }
         }
 
         //hahaNO
