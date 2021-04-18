@@ -35,7 +35,10 @@ namespace ConsoleApplication1
         public float warudoCooldown;
         public bool tpEnabled;
         public bool warudoEnabled;
+        public bool DEVMODE;
 
+        public IObjectTimerTrigger RemoveHaleItemsTimer;
+        public IObjectTimerTrigger DisplayHaleStatusTimer;
         public IObjectTimerTrigger HaleSniperTimer;
         public IObjectTimerTrigger HaleMovementStopper;
         public IObjectTimerTrigger PlayerMovementStopper;
@@ -44,32 +47,34 @@ namespace ConsoleApplication1
         // Run code before triggers marked with "Activate on startup" but after players spawn from SpawnMarkers.
         public void OnStartup()
         {
+            // Bool variable to set DEV mode (1 player in game is HALE)
+            DEVMODE = true;
+
             m_rnd = new Random((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000);
 
             // By default HALE cannot tp or ZA WARUDO
             tpEnabled = false;
             warudoEnabled = false;
 
+            // Initate all HALE types
             HALENAMES = new string[5];
             HALENAMES[0] = "Saxton Fale";
             HALENAMES[1] = "Sin Feaster";
             HALENAMES[2] = "Speedy Fale";
             HALENAMES[3] = "DIO";
             HALENAMES[4] = "Snipur Faggot";
-            // { "Saxton Fale", "Sin Feaster", "Snipur Faggot"};
 
             // Every 200ms, delete all items from HALE
-            IObjectTimerTrigger timer1 = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
-            timer1.SetRepeatCount(0);
-            timer1.SetIntervalTime(200);
-            timer1.SetScriptMethod("RemoveHaleItems");
-            timer1.Trigger();
+            RemoveHaleItemsTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
+            RemoveHaleItemsTimer.SetRepeatCount(0);
+            RemoveHaleItemsTimer.SetIntervalTime(200);
+            RemoveHaleItemsTimer.SetScriptMethod("RemoveHaleItems");
 
-            IObjectTimerTrigger timer2 = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
-            timer2.SetRepeatCount(0);
-            timer2.SetIntervalTime(1000);
-            timer2.SetScriptMethod("DisplayHaleStatus");
-            timer2.Trigger();
+            // Trigger for displaying HALE status for players
+            DisplayHaleStatusTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
+            DisplayHaleStatusTimer.SetRepeatCount(0);
+            DisplayHaleStatusTimer.SetIntervalTime(1000);
+            DisplayHaleStatusTimer.SetScriptMethod("DisplayHaleStatus");
 
             // Player key input ( for hale teleport)
             Events.PlayerKeyInputCallback.Start(OnPlayerKeyInput);
@@ -83,7 +88,6 @@ namespace ConsoleApplication1
             HaleMovementStopper.SetRepeatCount(1);
             HaleMovementStopper.SetIntervalTime(500);
             HaleMovementStopper.SetScriptMethod("ToggleHaleMovement");
-            HaleMovementStopper.Trigger();
 
             // Trigger for HALE beginning cooldown. In the beginning set to stop HALE for 5s
             HaleStartCooldown = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
@@ -137,6 +141,7 @@ namespace ConsoleApplication1
                 SetHaleCandidates();
             }
             string[] haleCandidates = (string[])Game.LocalStorage.GetItem("halecandidates");
+
             // Print halecandidates list from local storage
             Game.RunCommand("/MSG " + "Halekandidaatit:");
             foreach (string name in haleCandidates )
@@ -145,44 +150,47 @@ namespace ConsoleApplication1
             }
 
             string next_hale_name = haleCandidates[ (m_rnd.Next(((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000)) + (int)DateTime.Now.Millisecond) % haleCandidates.Length];
-            IPlayer next_hale = players[1];
+            IPlayer next_hale = players[0];
             int next_type = (m_rnd.Next(0, ((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000)) + (int)DateTime.Now.Millisecond) % (HALENAMES.Length-1);
             int random_index = 0;
-
-            // Check if storage contains last_hale. If it does make sure that same person isn't hale again.
-            bool chooseAgain = false;
-            if ( !Game.LocalStorage.ContainsKey("last_hale") )
+            if ( !DEVMODE )
             {
-                Game.RunCommand("/MSG " + "Jonotuslista resettiin.");
+                // Check if storage contains last_hale. If it does make sure that same person isn't hale again.
+                bool chooseAgain = false;
+                if ( !Game.LocalStorage.ContainsKey("last_hale") )
+                {
+                    Game.RunCommand("/MSG " + "Local storagesta ei löydy avainta 'last hale', joten tehdään se");
+                    Game.LocalStorage.SetItem("last_hale", next_hale_name);
+                }
+                else
+                {
+                    do
+                    {
+                        chooseAgain = false;
+                        next_hale_name = haleCandidates[(m_rnd.Next(((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000) + random_index ) + (int)DateTime.Now.Millisecond) % haleCandidates.Length];
+                        if ((string)Game.LocalStorage.GetItem("last_hale") == next_hale_name)
+                        {
+                            Game.RunCommand("/MSG " + "Sama hale kuin viimeksi --> vaihtoon");
+                            chooseAgain = true;
+                        }
+                        foreach (IPlayer plr in players)
+                        {
+                            if (plr.Name == next_hale_name )
+                            {
+                                next_hale = plr;
+                            }
+                        }
+                        random_index++;
+                    } while (chooseAgain);
+                }
+
+                // Delete new hale from halecandidates and update 'last_hale' in localstorage
+                haleCandidates = haleCandidates.Where((source, index) => source != next_hale_name).ToArray();
+
+                // Save changes to LocalStorage
+                Game.LocalStorage.SetItem("halecandidates", haleCandidates);
                 Game.LocalStorage.SetItem("last_hale", next_hale_name);
             }
-            else
-            {
-                do
-                {
-                    chooseAgain = false;
-                    next_hale_name = haleCandidates[(m_rnd.Next(((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000) + random_index ) + (int)DateTime.Now.Millisecond) % haleCandidates.Length];
-                    if ((string)Game.LocalStorage.GetItem("last_hale") == next_hale_name)
-                    {
-                        Game.RunCommand("/MSG " + "Sama hale kuin viimeksi --> vaihtoon");
-                        chooseAgain = true;
-                    }
-                    foreach (IPlayer plr in players)
-                    {
-                        if (plr.Name == next_hale_name )
-                        {
-                            next_hale = plr;
-                        }
-                    }
-                    random_index++;
-                } while (chooseAgain);
-            }
-            // Delete new hale from halecandidates and update 'last_hale' in localstorage
-            haleCandidates = haleCandidates.Where((source, index) => source != next_hale_name).ToArray();
-
-            // Save changes to LocalStorage
-            Game.LocalStorage.SetItem("halecandidates", haleCandidates);
-            Game.LocalStorage.SetItem("last_hale", next_hale_name);
 
             HALE = next_hale;
             HALETYPE = next_type;
@@ -195,14 +203,21 @@ namespace ConsoleApplication1
             PlayerModifiers modify = HALE.GetModifiers();
             int haleHP;
             int hpConstant = 150;
-            if (players.Length <= 4)
+            if ( DEVMODE )
             {
-                haleHP = (players.Length - 1) * hpConstant;
+                haleHP = 500;
             }
-            else
-            {
-                haleHP = 4 * hpConstant + (players.Length - 4) * hpConstant / 2;
+            else {
+                if (players.Length <= 4)
+                {
+                    haleHP = (players.Length - 1) * hpConstant;
+                }
+                else
+                {
+                    haleHP = 4 * hpConstant + (players.Length - 4) * hpConstant / 2;
+                }
             }
+            
             lastHaleHp = haleHP;
 
             Game.RunCommand("/MSG " + " - - - Minä olen hirmuinen " + HALENAMES[HALETYPE] + " - - - ");
@@ -254,8 +269,18 @@ namespace ConsoleApplication1
                     break;
             }
 
-            // Set beginning movement cooldown for all HALES.
-            HaleStartCooldown.Trigger();
+            // Activate HALE triggers
+            if ( DEVMODE )
+            {
+                Game.RunCommand("/INFINITE_AMMO 1");
+                Game.RunCommand("/GIVE 0 shuriken");
+            }
+            else {
+                HALE.SetInputEnabled(false);
+                HaleStartCooldown.Trigger();
+                RemoveHaleItemsTimer.Trigger();
+            }
+            DisplayHaleStatusTimer.Trigger();
         }
 
         public void SetHaleModifiers(ref PlayerModifiers modify, int HP, float sprintSpeed, float runSpeed, float meleeForce, float meleeDamageDealt, float meleeDamageTaken)
@@ -515,11 +540,6 @@ namespace ConsoleApplication1
         void HelloHale()
         {
             String msg = "All hail HALE " + HALE.GetUser().Name + "!";
-            String lines = "";
-            for (int i = 0; i < msg.Length; i++)
-            {
-                lines = lines + "===";
-            }
             Game.RunCommand("/MSG " + "====================");
             Game.RunCommand("/MSG " + msg);
             Game.RunCommand("/MSG " + "====================");
@@ -528,7 +548,10 @@ namespace ConsoleApplication1
         // If falling thing is HALE, then tp to safety
         public void KillZoneTrigger(TriggerArgs args)
         {
-            // Game.RunCommand("/MSG " + "Jotain rajalla");
+            if ( DEVMODE )
+            {
+                Game.RunCommand("/MSG " + "Jotain rajalla");
+            }
             if (args.Sender == HALE)
             {
                 int newHealth = (int)HALE.GetHealth() - 50;
@@ -563,7 +586,7 @@ namespace ConsoleApplication1
             {
                 Game.RunCommand("/MAPROTATION " + "10");
 
-                for (int i = 0; i < 50; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     Game.RunCommand("/MSG " + "nothing suspicious here...");
                 }
@@ -608,6 +631,10 @@ namespace ConsoleApplication1
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -125);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(12, 3);
                 SetSafeZone(position, sizeFactor);
+                // SFDGameScriptInterface.Vector2 positionAcid = new SFDGameScriptInterface.Vector2(-200, -200);
+                // IObject acidArea = Game.GetObject(955);
+                // Game.RunCommand("/MSG " + "lol + " + acidArea.GetWorldPosition() );
+                // acidArea.SetWorldPosition(positionAcid);
             }
             else if ( mapName == "Sector 8" )
             {
@@ -656,8 +683,16 @@ namespace ConsoleApplication1
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(132, -172);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(16, 3);
                 SetSafeZone(position, sizeFactor);
+                
             }
             else if ( mapName == "Old Warehouse" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
+                SetSafeZone(position, sizeFactor);
+            }
+            else if ( mapName == "Tower" )
             {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
@@ -677,9 +712,9 @@ namespace ConsoleApplication1
             IObjectAreaTrigger saveHaleZone = (IObjectAreaTrigger)Game.CreateObject("AreaTrigger", pos);
             saveHaleZone.SetOnEnterMethod("KillZoneTrigger");
             saveHaleZone.SetSizeFactor(sizeFactor);
-            // Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
-            // Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
-            // Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
+            Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
+            Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
+            Game.RunCommand("/MSG " + "BASESIZE : " + saveHaleZone.GetBaseSize().ToString());
         }
 
         //hahaNO
