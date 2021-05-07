@@ -608,14 +608,12 @@ namespace ConsoleApplication1
         public void ModGibZones()
         {
             string mapName = Game.MapName;
-            if ( mapName == "Hazardous" )
-            {
+            if ( mapName == "Hazardous" ) {
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-172, -120);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(52, 2);
                 SetSafeZone(position, sizeFactor);
             }
-            else if ( mapName == "Police Station" )
-            {
+            else if ( mapName == "Police Station" ) {
                 // Game.RunCommand("/MAPROTATION " + "10");
 
                 // for (int i = 0; i < 100; i++)
@@ -631,20 +629,17 @@ namespace ConsoleApplication1
                 SetSafeZone(position1, sizeFactor1);
                 SetSafeZone(position2, sizeFactor2);
             }
-            else if ( mapName == "Canals" )
-            {
+            else if ( mapName == "Canals" ) {
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-212, -164);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(37, 2);
                 SetSafeZone(position, sizeFactor);
             }
-            else if ( mapName == "Castle Courtyard" )
-            {
+            else if ( mapName == "Castle Courtyard" ) {
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(360, -300);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(32, 2);
                 SetSafeZone(position, sizeFactor);
             }
-            else if ( mapName == "Rooftops" )
-            {
+            else if ( mapName == "Rooftops" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
                 SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
@@ -658,15 +653,13 @@ namespace ConsoleApplication1
                 SetSafeZone(position2, sizeFactor2);
                 SetSafeZone(position3, sizeFactor3);
             }
-            else if (mapName == "Chemical Plant")
-            {
+            else if (mapName == "Chemical Plant") {
                 // Left acid container
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-76, -120);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(14, 3);
                 SetSafeZone(position, sizeFactor);
             }
-            else if ( mapName == "Sector 8" )
-            {
+            else if ( mapName == "Sector 8" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
                 SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
@@ -680,8 +673,7 @@ namespace ConsoleApplication1
                 SetSafeZone(position2, sizeFactor2);
                 SetSafeZone(position3, sizeFactor3);
             }
-            else if ( mapName == "Rooftops II" )
-            {
+            else if ( mapName == "Rooftops II" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
                 SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
@@ -695,8 +687,7 @@ namespace ConsoleApplication1
                 SetSafeZone(position2, sizeFactor2);
                 SetSafeZone(position3, sizeFactor3);
             }
-            else if ( mapName == "Heavy Equipment" )
-            {
+            else if ( mapName == "Heavy Equipment" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
                 SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
@@ -706,47 +697,59 @@ namespace ConsoleApplication1
                 SetSafeZone(position1, sizeFactor1);
                 SetSafeZone(position2, sizeFactor2);
             }
-            else if ( mapName == "Plant 47" )
-            {
+            else if ( mapName == "Plant 47" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(132, -172);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(16, 3);
                 SetSafeZone(position, sizeFactor);
                 
             }
-            else if ( mapName == "Old Warehouse" )
-            {
+            else if ( mapName == "Old Warehouse" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
                 SetSafeZone(position, sizeFactor);
             }
-            else if ( mapName == "Tower" )
-            {
+            else if ( mapName == "Tower" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
                 SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
                 SetSafeZone(position, sizeFactor);
             }
-            else if ( mapName == "Pistons" )
-            {
+            else if ( mapName == "Pistons" ) {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position1 = new SFDGameScriptInterface.Vector2(-500, -200);
+                SFDGameScriptInterface.Point sizeFactor1 = new SFDGameScriptInterface.Point(125, 3);
+                SetSafeZone(position1, sizeFactor1);
+                // The GIB-buckets:
+                SFDGameScriptInterface.Vector2 position2 = new SFDGameScriptInterface.Vector2(-216, -40);
+                SFDGameScriptInterface.Point sizeFactor2 = new SFDGameScriptInterface.Point(10, 4);
+                SetSafeZone(position2, sizeFactor2);
+            }
+            else if ( mapName == "Facility" ) {
                 // Bottom
                 SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
-                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 5);
+                SetSafeZone(position, sizeFactor);
+                // Maybe left??
+            }
+            else if ( mapName == "Steamship" ) {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -180);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 5);
                 SetSafeZone(position, sizeFactor);
             }
-            // else if ( mapName == "East Warehouse" )
-            // {
-            //     // Bottom
-            //     SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -200);
-            //     SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(125, 3);
-            //     SetSafeZone(position, sizeFactor);
-
-            //     // Left??
-            // }
+            else if ( mapName == "East Warehouse" )
+            {
+                // Bottom
+                SFDGameScriptInterface.Vector2 position = new SFDGameScriptInterface.Vector2(-500, -150);
+                SFDGameScriptInterface.Point sizeFactor = new SFDGameScriptInterface.Point(32, 5);
+                SetSafeZone(position, sizeFactor);
+                // Left??
+            }
             else
             {
-                Game.RunCommand("/MSG " + "Mapissa " + mapName + ": Halen turvaverkko is off");
+                Game.RunCommand("/MSG " + "Mapissa " + mapName + ": Halen tervapeikko is off");
             }
         }
 
