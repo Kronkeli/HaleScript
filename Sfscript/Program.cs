@@ -11,9 +11,9 @@ using System.Drawing;
 // All available system namespaces in the ScriptAPI (as of Alpha 1.0.0).
 
 // ****** IMPORTANT *******
-// The script contains DEVMODE-variable for accessing script in test mode
-// DEVMODE = true --> Development mode on
-// DEVMODE = false --> Development mode off
+// The script contains MODE-variable for accessing script in test mode
+// MODE = true --> Development mode on
+// MODE = false --> Development mode off
 
 
 namespace ConsoleApplication1
@@ -40,26 +40,62 @@ namespace ConsoleApplication1
         public float warudoCooldown;
         public bool tpEnabled;
         public bool warudoEnabled;
-        public bool DEVMODE;
+        public bool zombifyHumansOnDeath;
+        public bool MODE;
+
+        private class data 
+        {
+            private IPlayer Player = null;
+            private IUser User = null;
+
+            public data(IPlayer p, IUser u)
+            {
+                Player = p;
+                User = u;
+            }
+
+            public IPlayer GetPlayer() 
+            {
+                return Player;
+            }
+            public IUser GetUser() 
+            {
+                return User;
+            }
+        }        
+        private List<data> humans = new List<data>();
+        private List<IPlayer> zombies = new List<IPlayer>();
+        private List<IPlayer> survivors = new List<IPlayer>();
 
         public IObjectTimerTrigger RemoveHaleItemsTimer;
         public IObjectTimerTrigger DisplayHaleStatusTimer;
-        public IObjectTimerTrigger HaleSniperTimer;
         public IObjectTimerTrigger HaleMovementStopper;
         public IObjectTimerTrigger PlayerMovementStopper;
         public IObjectTimerTrigger HaleStartCooldown;
+        public IObjectTimerTrigger ReanimateTrigger;
+
+        //----------ZOMBIE STATS-----------// 
+        const float Zomb_Sprint_Speed = 4f;
+        const float Zomb_Run_Speed = 4f;
+        const float Zomb_Melee_Damage = 1.3f;
+
+        const int Zomb_Max_Health = 100;
+        const float Zomb_Size = 0.001f;
+        const float Zomb_Melee_Force = 3f;
 
         // Run code before triggers marked with "Activate on startup" but after players spawn from SpawnMarkers.
         public void OnStartup()
         {
-            // Bool variable to set DEV mode (1 player in game is HALE)
-            DEVMODE = false;
+            // Bool variable to set  mode (1 player in game is HALE)
+            MODE = false;
 
             m_rnd = new Random((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000);
 
-            // By default HALE cannot tp or ZA WARUDO
+            // By default HALE cannot tp or ZA WARUDO and no one zombifyes on death
             tpEnabled = false;
             warudoEnabled = false;
+            zombifyHumansOnDeath = false;
+
 
             // Initate all HALE types
             HALENAMES = new string[5];
@@ -67,7 +103,7 @@ namespace ConsoleApplication1
             HALENAMES[1] = "Sin Feaster";
             HALENAMES[2] = "Speedy Fale";
             HALENAMES[3] = "DIO";
-            HALENAMES[4] = "Snipur Faggot";
+            HALENAMES[4] = "Sick Fuck";
 
             // Every 200ms, delete all items from HALE
             RemoveHaleItemsTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
@@ -100,21 +136,26 @@ namespace ConsoleApplication1
             HaleStartCooldown.SetIntervalTime(5000);
             HaleStartCooldown.SetScriptMethod("ToggleHaleMovement");
 
-            // Trigger for snipur HALE to give him snipers every 20s.
-            HaleSniperTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
-            HaleSniperTimer.SetRepeatCount(0);
-            HaleSniperTimer.SetIntervalTime(20000);
-            HaleSniperTimer.SetScriptMethod("GiveSniperSnipur");
-
             // Trigger for disabling player input for 5 seconds (ZA WARUDO). 
             PlayerMovementStopper = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             PlayerMovementStopper.SetRepeatCount(1);
             PlayerMovementStopper.SetIntervalTime(1667);
             PlayerMovementStopper.SetScriptMethod("TogglePlayerMovement");
 
+            // Time trigger for reanimating players
+            ReanimateTrigger = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
+            ReanimateTrigger.SetRepeatCount(0);
+            ReanimateTrigger.SetIntervalTime(200);
+            ReanimateTrigger.SetScriptMethod("ReanimatePlayers");
+
+            // On death trigger for ondeath event for zombie hale
+            IObjectTrigger deathTrigger = (IObjectTrigger)Game.CreateObject("OnPlayerDeathTrigger"); 
+            deathTrigger.SetScriptMethod("ondeath");
+
             // At the beginning of the game set next HALE
             SetHale();
             HelloHale();
+            zombies.Clear();
         }
 
         private void SetHale()
@@ -156,9 +197,9 @@ namespace ConsoleApplication1
 
             string next_hale_name = haleCandidates[ (m_rnd.Next(((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000)) + (int)DateTime.Now.Millisecond) % haleCandidates.Length];
             IPlayer next_hale = players[0];
-            int next_type = (m_rnd.Next(0, ((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000)) + (int)DateTime.Now.Millisecond) % (HALENAMES.Length-1);
+            int next_type = (m_rnd.Next(0, ((int)DateTime.Now.Millisecond * (int)DateTime.Now.Minute * 1000)) + (int)DateTime.Now.Millisecond) % (HALENAMES.Length);
             int random_index = 0;
-            if ( !DEVMODE )
+            if ( !MODE )
             {
                 // Check if storage contains last_hale. If it does make sure that same person isn't hale again.
                 bool chooseAgain = false;
@@ -188,7 +229,7 @@ namespace ConsoleApplication1
             HALE = next_hale;
             HALETYPE = next_type;
             
-            // HALETYPE = 3;
+            HALETYPE = 4;
             HALE.SetTeam(PlayerTeam.Team2);
 
             // Calculating hale HP based on playeramount and getting the modifier for HALE to apply changes
@@ -196,7 +237,7 @@ namespace ConsoleApplication1
             PlayerModifiers modify = HALE.GetModifiers();
             int haleHP;
             int hpConstant = 150;
-            if ( DEVMODE )
+            if ( MODE )
             {
                 haleHP = 500;
             }
@@ -218,6 +259,7 @@ namespace ConsoleApplication1
             // Setting HALE modifiers
             switch (HALETYPE)
             {
+                // SetHaleModifiers( modify, HP, sprintSpeed, runSpeed, meleeForce, meleeDamageDealt, meleeDamageTaken )
                 // Saxton Fale;
                 case 0:
                     SetHaleClothing(ref HALE);
@@ -250,20 +292,19 @@ namespace ConsoleApplication1
                     HALE.SetModifiers(modify);
                     break;
 
-                // Snipur Faggot
+                // Sick Fuck
                 case 4:
-                    tpEnabled = true;
-                    tpCooldown = 10000;
-                    HaleSniperTimer.Trigger();
-                    HALE.GiveWeaponItem(WeaponItem.SNIPER);
-                    HALE.GiveWeaponItem(WeaponItem.FIREAMMO);
-                    SetHaleModifiers(ref modify, haleHP, 1f, 1f, 1f, 1f, 2f);
+                    SetTeam(HALETYPE);
+                    zombifyHumansOnDeath = true;
+                    SetSickClothing(ref HALE);
+                    SetHaleModifiers(ref modify, haleHP/2, 1.5f, 1.5f, 2f, 3f, 1f);
                     HALE.SetModifiers(modify);
+                    ReanimateTrigger.Trigger();
                     break;
             }
 
             // Activate HALE triggers
-            if ( DEVMODE )
+            if ( MODE )
             {
                 Game.RunCommand("/INFINITE_AMMO 1");
                 Game.RunCommand("/GIVE 0 shuriken");
@@ -286,7 +327,7 @@ namespace ConsoleApplication1
             modify.EnergyRechargeModifier = 100;
             modify.SizeModifier = 2f;
 
-            // Then the HALE-specific modifiers
+            // Then the HALE-specific modifiers                                                             
             modify.SprintSpeedModifier = sprintSpeed;
             modify.RunSpeedModifier = runSpeed;
             modify.MeleeForceModifier = meleeForce;
@@ -330,6 +371,7 @@ namespace ConsoleApplication1
             haleProfile.ChestOver = null;
             haleProfile.ChestUnder = new IProfileClothingItem("Tshirt", "ClothingBlack");
             haleProfile.Hands = null;
+            haleProfile.Waist = null;
             haleProfile.Legs = new IProfileClothingItem("Shorts", "ClothingRed");
             haleProfile.Feet = new IProfileClothingItem("Shoes", "ClothingBlack");
             haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3");
@@ -344,9 +386,25 @@ namespace ConsoleApplication1
             haleProfile.ChestOver = new IProfileClothingItem("BlazerwithShirt", "ClothingYellow", "ClothingBlack");
             haleProfile.ChestUnder = new IProfileClothingItem("ShirtWithTie", "ClothingYellow", "ClothingBlack");
             haleProfile.Hands = new IProfileClothingItem("FingerlessGloves(Black)", "ClothingYellow");
+            haleProfile.Waist = null;
             haleProfile.Legs = new IProfileClothingItem("Pants", "ClothingYellow");
             haleProfile.Feet = new IProfileClothingItem("Boots(black)", "ClothingYellow");
             haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3");
+            halePlayer.SetProfile(haleProfile);
+        }
+
+        public void SetSickClothing(ref IPlayer halePlayer)
+        {
+            IProfile haleProfile = halePlayer.GetProfile();
+            haleProfile.Accesory = new IProfileClothingItem("GasMask", "ClothingBlack", "ClothingRed");
+            haleProfile.Head = null;
+            haleProfile.ChestOver = null;
+            haleProfile.ChestUnder = null;
+            haleProfile.Hands = null;
+            haleProfile.Waist = null;
+            haleProfile.Legs = null;
+            haleProfile.Feet = null;
+            haleProfile.Skin = new IProfileClothingItem("Zombie", "Skin1");
             halePlayer.SetProfile(haleProfile);
         }
 
@@ -354,16 +412,20 @@ namespace ConsoleApplication1
         {
             HALE.RemoveWeaponItemType(WeaponItemType.Melee);
             HALE.RemoveWeaponItemType(WeaponItemType.Handgun);
-            if (HALENAMES[HALETYPE] != "Snipur Faggot")
-            {
-                HALE.RemoveWeaponItemType(WeaponItemType.Rifle);
-            }
-            else if (HALE.CurrentPrimaryWeapon.WeaponItem != WeaponItem.SNIPER)
-            {
-                HALE.RemoveWeaponItemType(WeaponItemType.Rifle);
-            }
+            HALE.RemoveWeaponItemType(WeaponItemType.Rifle);
             HALE.RemoveWeaponItemType(WeaponItemType.Thrown);
             HALE.RemoveWeaponItemType(WeaponItemType.Powerup);
+
+            // Remove Zombie items if there are any
+            if ( zombifyHumansOnDeath ) {
+                foreach ( IPlayer plr in zombies ) {
+                    plr.RemoveWeaponItemType(WeaponItemType.Melee);
+                    plr.RemoveWeaponItemType(WeaponItemType.Handgun);
+                    plr.RemoveWeaponItemType(WeaponItemType.Thrown);
+                    plr.RemoveWeaponItemType(WeaponItemType.Rifle);
+                    plr.RemoveWeaponItemType(WeaponItemType.Powerup);
+                }
+            }
 
             // Check if Hale has picked HP and put penalty if has
             if ( lastHaleHp < HALE.GetHealth() )
@@ -425,7 +487,7 @@ namespace ConsoleApplication1
 
         public void DisplayHaleStatus(TriggerArgs args)
         {
-            if (HALETYPE == 0 || HALETYPE == 2)
+            if (HALETYPE == 0 || HALETYPE == 2 || HALETYPE == 4)
             {
                 Game.ShowPopupMessage("Hale HP: " + (int)Math.Round(HALE.GetModifiers().CurrentHealth));
             }
@@ -471,10 +533,92 @@ namespace ConsoleApplication1
             }
         }
 
-        public void GiveSniperSnipur(TriggerArgs args)
+        public void SetTeam(int rp)
         {
-            HALE.GiveWeaponItem(WeaponItem.SNIPER);
-            HALE.GiveWeaponItem(WeaponItem.FIREAMMO);
+            IPlayer[] players = Game.GetPlayers(); 
+
+            for(int i = 0; i < Game.GetPlayers().Length; i++)
+            {
+                if(i == rp)
+                { 
+                    // players[i].SetTeam(PlayerTeam.Team3);
+                    // boss(players[i]);
+                    zombies.Add(players[i]);
+                }
+                else 
+                { 
+                    // players[i].SetTeam(PlayerTeam.Team1);
+                    survivors.Add(players[i]);
+                }
+            }
+        }
+        public void zombie(IUser u)
+        {
+            IPlayer p = u.GetPlayer();
+            PlayerModifiers m = p.GetModifiers();
+            m.SprintSpeedModifier = Zomb_Sprint_Speed;
+            m.RunSpeedModifier = Zomb_Run_Speed;
+            m.MeleeDamageDealtModifier = Zomb_Melee_Damage;
+            m.MeleeForceModifier = Zomb_Melee_Force;
+            m.MaxHealth = Zomb_Max_Health;
+            m.CurrentHealth = Zomb_Max_Health;
+            m.SizeModifier = Zomb_Size;
+            p.SetModifiers(m);
+
+            IProfile pr = u.GetProfile(); 
+            pr.Skin = new IProfileClothingItem("Zombie", " ");
+            pr.Accesory = null;
+            pr.Head = null;
+            pr.ChestOver = null;
+            pr.ChestUnder = null;
+            pr.Hands = null;
+            pr.Waist = null;
+            pr.Legs = null;
+            pr.Feet = null;
+            p.SetProfile(pr);
+        }
+
+        public void ondeath(TriggerArgs args)
+        {
+            if ( zombifyHumansOnDeath )
+            {
+                if(!Game.IsGameOver && survivors.Count != 1)
+                {
+                    IPlayer player = (IPlayer)args.Sender;
+                    if(player.GetTeam() == PlayerTeam.Team1)
+                    {
+                        humans.Add(new data(player, player.GetUser()));
+                        survivors.Remove(player);
+                    }
+                }
+            }
+        }
+
+        public void ReanimatePlayers(TriggerArgs args)
+        { 
+            for (int i = humans.Count - 1; i >= 0; i--)
+            {
+                data ply = humans[i];
+                if (ply.GetUser() != null)
+                {
+                    render(ply.GetUser());
+                    ply.GetPlayer().Remove();
+                    humans.RemoveAt(i);
+                }
+            }
+        }
+
+        public void render(IUser user)
+        { 
+            if(user.GetPlayer() != null)
+            {
+                SFDGameScriptInterface.Vector2 zpos = user.GetPlayer().GetWorldPosition();
+                IPlayer zp = Game.CreatePlayer(zpos);
+                zp.SetUser(user);
+                zp.SetTeam(PlayerTeam.Team2);
+                zombie(user);
+                zombies.Add(zp);
+            }
         }
 
         // Run code after triggers marked with "Activate on startup".
@@ -505,11 +649,24 @@ namespace ConsoleApplication1
         void TeleportHaleToPlayers()
         {
             IPlayer[] players = Game.GetPlayers();
-            IPlayer plr = players[m_rnd.Next(0, players.Length)];
+            IPlayer plr = HALE;
+            float HalePlace = HALE.GetWorldPosition().X;
+            int faceDir = plr.GetFaceDirection();
             int counter = 1;
+            int index;
+            bool isSideRight;
             while ((plr == HALE || plr.IsDead == true) & counter < 20)
             {
-                plr = players[m_rnd.Next(0, players.Length)];
+                index = m_rnd.Next(0, players.Length);
+                isSideRight = HalePlace < players[index].GetWorldPosition().X;
+                // Player on the right side?
+                if ( faceDir == 1 & isSideRight ) {
+                    plr = players[index];
+                }
+                // Player on the left side?
+                else if ( faceDir == -1 & !isSideRight ) {
+                    plr = players[index];
+                }
                 counter++;
             }
             Game.PlaySound("ChurchBell1", plr.GetWorldPosition(), 1);
@@ -523,6 +680,13 @@ namespace ConsoleApplication1
             int rnd = m_rnd.Next(0, spawnAreas.Length);
             SFDGameScriptInterface.Vector2 place = spawnAreas[rnd].GetWorldPosition();
             HALE.SetWorldPosition(place);
+        }
+
+        void TeleportPlayerToSpawns(IPlayer plr) {
+            IObject[] spawnAreas = Game.GetObjectsByName("SpawnPlayer");
+            int rnd = m_rnd.Next(0, spawnAreas.Length);
+            SFDGameScriptInterface.Vector2 place = spawnAreas[rnd].GetWorldPosition();
+            plr.SetWorldPosition(place);
         }
 
         public void OnPlayerKeyInput(IPlayer player, VirtualKeyInfo[] keyEvents)
@@ -543,10 +707,6 @@ namespace ConsoleApplication1
                             TeleportHaleToPlayers();
                             HALE.SetInputEnabled(false);
                             HaleMovementStopper.Trigger();
-                        }
-                        else if (HALENAMES[HALETYPE] == "Snipur Faggot")
-                        {
-                            TeleportHaleToSpawns();
                         }
                         break;
                     }
@@ -580,13 +740,19 @@ namespace ConsoleApplication1
         // If falling thing is HALE, then tp to safety
         public void KillZoneTrigger(TriggerArgs args)
         {
-            if ( DEVMODE )
+            if ( MODE )
             {
                 Game.RunCommand("/MSG " + "Jotain rajalla");
             }
             if (args.Sender == HALE)
             {
-                int newHealth = (int)HALE.GetHealth() - 50;
+                int newHealth;
+                if ( HALENAMES[HALETYPE] == "Sick Fuck" ) {
+                    newHealth = (int)HALE.GetHealth() - 25;
+                }
+                else {
+                    newHealth = (int)HALE.GetHealth() - 50;
+                }
                 HALE.SetHealth(newHealth);
                 IObject[] spawnAreas = Game.GetObjectsByName("SpawnPlayer");
                 int rnd = m_rnd.Next(0, spawnAreas.Length);
@@ -600,6 +766,19 @@ namespace ConsoleApplication1
                 {
                     Game.RunCommand("/MSG " + "EN KUOLE SAATANA t. " + HALE.GetUser().Name);
                     HALE.SetWorldPosition(place);
+                }
+            }
+            else if ( zombifyHumansOnDeath == true ) {
+                if ( args.Sender is IPlayer ) {
+                    IPlayer plr = args.Sender as IPlayer;
+                    if (plr.GetTeam() == PlayerTeam.Team1) {
+   {
+                        humans.Add(new data(plr, plr.GetUser()));
+                        survivors.Remove(plr);
+                        TeleportPlayerToSpawns(plr);
+                    }
+                    // render(plr.GetUser());
+                    }
                 }
             }
         }
@@ -760,7 +939,7 @@ namespace ConsoleApplication1
             IObjectAreaTrigger saveHaleZone = (IObjectAreaTrigger)Game.CreateObject("AreaTrigger", pos);
             saveHaleZone.SetOnEnterMethod("KillZoneTrigger");
             saveHaleZone.SetSizeFactor(sizeFactor);
-            if ( DEVMODE )
+            if ( MODE )
             {
                 Game.RunCommand("/MSG " + "SIZE : " + saveHaleZone.GetSize().ToString());
                 Game.RunCommand("/MSG " + "SIZEFACTOR : " + saveHaleZone.GetSizeFactor().ToString());
