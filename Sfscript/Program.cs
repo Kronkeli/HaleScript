@@ -103,13 +103,13 @@ namespace ConsoleApplication1
             HALENAMES[1] = "Sin Feaster";
             HALENAMES[2] = "Speedy Fale";
             HALENAMES[3] = "DIO";
-            HALENAMES[4] = "Sick Fuck";
+            HALENAMES[4] = "SuperFather";
 
             // Every 200ms, delete all items from HALE
             RemoveHaleItemsTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             RemoveHaleItemsTimer.SetRepeatCount(0);
             RemoveHaleItemsTimer.SetIntervalTime(200);
-            RemoveHaleItemsTimer.SetScriptMethod("RemoveHaleItems");
+            RemoveHaleItemsTimer.SetScriptMethod("RemoveHaleItems");    
 
             // Trigger for displaying HALE status for players
             DisplayHaleStatusTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
@@ -136,10 +136,10 @@ namespace ConsoleApplication1
             HaleStartCooldown.SetIntervalTime(5000);
             HaleStartCooldown.SetScriptMethod("ToggleHaleMovement");
 
-            // Trigger for disabling player input for 5 seconds (ZA WARUDO). 
+            // Trigger for disabling player input for 2-3 seconds (ZA WARUDO). 
             PlayerMovementStopper = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             PlayerMovementStopper.SetRepeatCount(1);
-            PlayerMovementStopper.SetIntervalTime(1667);
+            PlayerMovementStopper.SetIntervalTime(750);
             PlayerMovementStopper.SetScriptMethod("TogglePlayerMovement");
 
             // Time trigger for reanimating players
@@ -229,7 +229,7 @@ namespace ConsoleApplication1
             HALE = next_hale;
             HALETYPE = next_type;
             
-            HALETYPE = 4;
+            // HALETYPE = 4;
             HALE.SetTeam(PlayerTeam.Team2);
 
             // Calculating hale HP based on playeramount and getting the modifier for HALE to apply changes
@@ -286,7 +286,7 @@ namespace ConsoleApplication1
                 // DIO
                 case 3:
                     warudoEnabled = true;
-                    warudoCooldown = 20000;
+                    warudoCooldown = 10000;
                     SetDIOClothing(ref HALE);
                     SetHaleModifiers(ref modify, haleHP, 1.2f, 1.2f, 3f, 3f, 2f);
                     HALE.SetModifiers(modify);
@@ -297,7 +297,7 @@ namespace ConsoleApplication1
                     SetTeam(HALETYPE);
                     zombifyHumansOnDeath = true;
                     SetSickClothing(ref HALE);
-                    SetHaleModifiers(ref modify, haleHP/2, 1.5f, 1.5f, 2f, 3f, 1f);
+                    SetHaleModifiers(ref modify, haleHP/2, 1.5f, 1.5f, 2f, 3f, 1.5f);
                     HALE.SetModifiers(modify);
                     ReanimateTrigger.Trigger();
                     break;
@@ -747,7 +747,7 @@ namespace ConsoleApplication1
             if (args.Sender == HALE)
             {
                 int newHealth;
-                if ( HALENAMES[HALETYPE] == "Sick Fuck" ) {
+                if ( HALENAMES[HALETYPE] == "Sick Father" ) {
                     newHealth = (int)HALE.GetHealth() - 25;
                 }
                 else {
@@ -772,11 +772,8 @@ namespace ConsoleApplication1
                 if ( args.Sender is IPlayer ) {
                     IPlayer plr = args.Sender as IPlayer;
                     if (plr.GetTeam() == PlayerTeam.Team1) {
-   {
-                        humans.Add(new data(plr, plr.GetUser()));
-                        survivors.Remove(plr);
                         TeleportPlayerToSpawns(plr);
-                    }
+                        plr.Kill();
                     // render(plr.GetUser());
                     }
                 }
