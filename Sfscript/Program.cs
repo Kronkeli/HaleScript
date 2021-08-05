@@ -103,7 +103,7 @@ namespace ConsoleApplication1
             HALENAMES[1] = "Sin Feaster";
             HALENAMES[2] = "Speedy Fale";
             HALENAMES[3] = "DIO";
-            HALENAMES[4] = "SuperFather";
+            HALENAMES[4] = "Dom Toretto";
 
             // Every 200ms, delete all items from HALE
             RemoveHaleItemsTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
@@ -229,7 +229,7 @@ namespace ConsoleApplication1
             HALE = next_hale;
             HALETYPE = next_type;
             
-            // HALETYPE = 4;
+            HALETYPE = 4;
             HALE.SetTeam(PlayerTeam.Team2);
 
             // Calculating hale HP based on playeramount and getting the modifier for HALE to apply changes
@@ -396,7 +396,7 @@ namespace ConsoleApplication1
         public void SetSickClothing(ref IPlayer halePlayer)
         {
             IProfile haleProfile = halePlayer.GetProfile();
-            haleProfile.Accesory = new IProfileClothingItem("GasMask", "ClothingBlack", "ClothingRed");
+            haleProfile.Accesory = null;
             haleProfile.Head = null;
             haleProfile.ChestOver = null;
             haleProfile.ChestUnder = null;
@@ -404,7 +404,7 @@ namespace ConsoleApplication1
             haleProfile.Waist = null;
             haleProfile.Legs = null;
             haleProfile.Feet = null;
-            haleProfile.Skin = new IProfileClothingItem("Zombie", "Skin1");
+            haleProfile.Skin = new IProfileClothingItem("Normal", "Skin2");
             halePlayer.SetProfile(haleProfile);
         }
 
@@ -565,17 +565,17 @@ namespace ConsoleApplication1
             m.SizeModifier = Zomb_Size;
             p.SetModifiers(m);
 
-            IProfile pr = u.GetProfile(); 
-            pr.Skin = new IProfileClothingItem("Zombie", " ");
-            pr.Accesory = null;
-            pr.Head = null;
-            pr.ChestOver = null;
-            pr.ChestUnder = null;
-            pr.Hands = null;
-            pr.Waist = null;
-            pr.Legs = null;
-            pr.Feet = null;
-            p.SetProfile(pr);
+            // IProfile pr = u.GetProfile(); 
+            // pr.Skin = new IProfileClothingItem("Zombie", " ");
+            // pr.Accesory = null;
+            // pr.Head = null;
+            // pr.ChestOver = null;
+            // pr.ChestUnder = null;
+            // pr.Hands = null;
+            // pr.Waist = null;
+            // pr.Legs = null;
+            // pr.Feet = null;
+            // p.SetProfile(pr);
         }
 
         public void ondeath(TriggerArgs args)
@@ -592,6 +592,7 @@ namespace ConsoleApplication1
                     }
                 }
             }
+            Game.ShowPopupMessage("WELCOME TO THE FAMILY");
         }
 
         public void ReanimatePlayers(TriggerArgs args)
@@ -604,6 +605,7 @@ namespace ConsoleApplication1
                     render(ply.GetUser());
                     ply.GetPlayer().Remove();
                     humans.RemoveAt(i);
+                    Game.ShowPopupMessage("");
                 }
             }
         }
@@ -618,6 +620,7 @@ namespace ConsoleApplication1
                 zp.SetTeam(PlayerTeam.Team2);
                 zombie(user);
                 zombies.Add(zp);
+                Game.ShowPopupMessage("WELCOME TO THE FAMILY");
             }
         }
 
@@ -631,6 +634,7 @@ namespace ConsoleApplication1
                 Game.RunCommand("/MSG " + " Nollataan lista kun on vain yks nimi.");
                 SetHaleCandidates();
             }
+            Game.ShowPopupMessage("YOU DON'T TURN BACK ON FAMILY");
         }
 
         // Run code on map restart (or script disabled).
