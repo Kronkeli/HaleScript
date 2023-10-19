@@ -14,7 +14,7 @@ using System.Drawing;
 // The script contains MODE-variable for accessing script in test mode
 // MODE = true --> Development mode on
 // MODE = false --> Development mode off
-
+    
 
 namespace ConsoleApplication1
 {
@@ -98,12 +98,13 @@ namespace ConsoleApplication1
 
 
             // Initate all HALE types
-            HALENAMES = new string[5];
+            HALENAMES = new string[6];
             HALENAMES[0] = "Saxton Fale";
             HALENAMES[1] = "Sin Feaster";
             HALENAMES[2] = "Speedy Fale";
             HALENAMES[3] = "DIO";
             HALENAMES[4] = "Dom Toretto";
+            HALENAMES[5] = "Father Christmas";
 
             // Every 200ms, delete all items from HALE
             RemoveHaleItemsTimer = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
@@ -229,14 +230,14 @@ namespace ConsoleApplication1
             HALE = next_hale;
             HALETYPE = next_type;
             
-            HALETYPE = 4;
+            HALETYPE = 5;
             HALE.SetTeam(PlayerTeam.Team2);
 
             // Calculating hale HP based on playeramount and getting the modifier for HALE to apply changes
             
             PlayerModifiers modify = HALE.GetModifiers();
             int haleHP;
-            int hpConstant = 150;
+            int hpConstant = 200;
             if ( MODE )
             {
                 haleHP = 500;
@@ -292,12 +293,21 @@ namespace ConsoleApplication1
                     HALE.SetModifiers(modify);
                     break;
 
-                // Sick Fuck
+                // Dom Torretto
                 case 4:
                     SetTeam(HALETYPE);
                     zombifyHumansOnDeath = true;
-                    SetSickClothing(ref HALE);
+                    SetSantaClothing(ref HALE);
                     SetHaleModifiers(ref modify, haleHP/2, 1.5f, 1.5f, 2f, 3f, 1.5f);
+                    HALE.SetModifiers(modify);
+                    ReanimateTrigger.Trigger();
+                    break;
+                // Father Christmas
+                case 5:
+                    SetTeam(HALETYPE);
+                    zombifyHumansOnDeath = true;
+                    SetSantaClothing(ref HALE);
+                    SetHaleModifiers(ref modify, haleHP / 2, 1.5f, 1.5f, 2f, 3f, 1.5f);
                     HALE.SetModifiers(modify);
                     ReanimateTrigger.Trigger();
                     break;
@@ -326,6 +336,7 @@ namespace ConsoleApplication1
             modify.CurrentEnergy = 9999;
             modify.EnergyRechargeModifier = 100;
             modify.SizeModifier = 2f;
+            modify.ExplosionDamageTakenModifier = 0.5f;
 
             // Then the HALE-specific modifiers                                                             
             modify.SprintSpeedModifier = sprintSpeed;
@@ -393,19 +404,35 @@ namespace ConsoleApplication1
             halePlayer.SetProfile(haleProfile);
         }
 
-        public void SetSickClothing(ref IPlayer halePlayer)
+        public void SetSantaClothing(ref IPlayer halePlayer)
         {
             IProfile haleProfile = halePlayer.GetProfile();
-            haleProfile.Accesory = null;
-            haleProfile.Head = null;
+            haleProfile.Accesory = new IProfileClothingItem("SantaMask", null);
+            haleProfile.Head = new IProfileClothingItem("SantaHat", "ClothingRed");
+            // haleProfile.ChestOver = new IProfileClothingItem("Robe", "ClothingRed");
             haleProfile.ChestOver = null;
             haleProfile.ChestUnder = null;
-            haleProfile.Hands = null;
-            haleProfile.Waist = null;
-            haleProfile.Legs = null;
-            haleProfile.Feet = null;
-            haleProfile.Skin = new IProfileClothingItem("Normal", "Skin2");
+            haleProfile.Hands = new IProfileClothingItem("Gloves", "ClothingWhite");;
+            haleProfile.Waist = new IProfileClothingItem("SmallBelt", "ClothingBlack","ClothingYellow");
+            haleProfile.Legs = new IProfileClothingItem("CamoPants", "ClothingWhite", "ClothingRed");
+            haleProfile.Feet = new IProfileClothingItem("Shoes", "ClothingBlack");
+            haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3");
             halePlayer.SetProfile(haleProfile);
+        }
+        public void SetElfClothing(ref IPlayer player) 
+        {
+            IProfile haleProfile = player.GetProfile();
+            haleProfile.Accesory = null;
+            haleProfile.Head = new IProfileClothingItem("SantaHat", "ClothingRed");
+            // haleProfile.ChestOver = new IProfileClothingItem("Robe", "ClothingRed");
+            haleProfile.ChestOver = null;
+            haleProfile.ChestUnder = null;
+            haleProfile.Hands = new IProfileClothingItem("Gloves", "ClothingWhite");;
+            haleProfile.Waist = new IProfileClothingItem("SmallBelt", "ClothingBlack","ClothingYellow");
+            haleProfile.Legs = new IProfileClothingItem("CamoPants", "ClothingWhite", "ClothingRed");
+            haleProfile.Feet = new IProfileClothingItem("Shoes", "ClothingBlack");
+            haleProfile.Skin = new IProfileClothingItem("Normal", "Skin3");
+            player.SetProfile(haleProfile);
         }
 
         public void RemoveHaleItems(TriggerArgs args)
@@ -564,18 +591,7 @@ namespace ConsoleApplication1
             m.CurrentHealth = Zomb_Max_Health;
             m.SizeModifier = Zomb_Size;
             p.SetModifiers(m);
-
-            // IProfile pr = u.GetProfile(); 
-            // pr.Skin = new IProfileClothingItem("Zombie", " ");
-            // pr.Accesory = null;
-            // pr.Head = null;
-            // pr.ChestOver = null;
-            // pr.ChestUnder = null;
-            // pr.Hands = null;
-            // pr.Waist = null;
-            // pr.Legs = null;
-            // pr.Feet = null;
-            // p.SetProfile(pr);
+            SetElfClothing(ref p);
         }
 
         public void ondeath(TriggerArgs args)
@@ -620,7 +636,19 @@ namespace ConsoleApplication1
                 zp.SetTeam(PlayerTeam.Team2);
                 zombie(user);
                 zombies.Add(zp);
-                Game.ShowPopupMessage("WELCOME TO THE FAMILY");
+                Game.ShowPopupMessage("IT IS ALMONST CHRISTMAS");
+            }
+            else {
+                Game.RunCommand("/MSG " + " Nyt tapahtui jotain hassua, eikä pelaajaa spawnata. Yritetään kuitenkin?!?!");
+                IObject[] spawnAreas = Game.GetObjectsByName("SpawnPlayer");
+                int rnd = m_rnd.Next(0, spawnAreas.Length);
+                SFDGameScriptInterface.Vector2 zpos = spawnAreas[rnd].GetWorldPosition();
+                IPlayer zp = Game.CreatePlayer(zpos);
+                zp.SetUser(user);
+                zp.SetTeam(PlayerTeam.Team2);
+                zombie(user);
+                zombies.Add(zp);
+                Game.ShowPopupMessage("Tonttupajaan TÖI-HIN");
             }
         }
 
@@ -634,7 +662,7 @@ namespace ConsoleApplication1
                 Game.RunCommand("/MSG " + " Nollataan lista kun on vain yks nimi.");
                 SetHaleCandidates();
             }
-            Game.ShowPopupMessage("YOU DON'T TURN BACK ON FAMILY");
+            Game.ShowPopupMessage("IT IS CHRISTMAS MY DUDES");
         }
 
         // Run code on map restart (or script disabled).
