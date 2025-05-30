@@ -14,7 +14,6 @@ using System.Drawing;
 // The script contains MODE-variable for accessing script in test mode
 // MODE = true --> Development mode on
 // MODE = false --> Development mode off
-    
 
 namespace ConsoleApplication1
 {
@@ -128,7 +127,7 @@ namespace ConsoleApplication1
             // Trigger for HALE action cooldown. 
             HaleMovementStopper = (IObjectTimerTrigger)Game.CreateObject("TimerTrigger");
             HaleMovementStopper.SetRepeatCount(1);
-            HaleMovementStopper.SetIntervalTime(500);
+            HaleMovementStopper.SetIntervalTime(1000);
             HaleMovementStopper.SetScriptMethod("ToggleHaleMovement");
 
             // Trigger for HALE beginning cooldown. In the beginning set to stop HALE for 5s
@@ -229,15 +228,15 @@ namespace ConsoleApplication1
 
             HALE = next_hale;
             HALETYPE = next_type;
-            
-            HALETYPE = 5;
+
+            HALETYPE = 4;
             HALE.SetTeam(PlayerTeam.Team2);
 
             // Calculating hale HP based on playeramount and getting the modifier for HALE to apply changes
             
             PlayerModifiers modify = HALE.GetModifiers();
             int haleHP;
-            int hpConstant = 200;
+            int hpConstant = 100;
             if ( MODE )
             {
                 haleHP = 500;
@@ -337,6 +336,10 @@ namespace ConsoleApplication1
             modify.EnergyRechargeModifier = 100;
             modify.SizeModifier = 2f;
             modify.ExplosionDamageTakenModifier = 0.5f;
+            modify.ClimbingSpeed = 2;
+            //modify.JumpHeight = 1.15f;
+            modify.CanInfernoBurn = 0;
+            modify.MeleeStunImmunity = 0;
 
             // Then the HALE-specific modifiers                                                             
             modify.SprintSpeedModifier = sprintSpeed;
@@ -344,6 +347,7 @@ namespace ConsoleApplication1
             modify.MeleeForceModifier = meleeForce;
             modify.MeleeDamageDealtModifier = meleeDamageDealt;
             modify.MeleeDamageTakenModifier = meleeDamageTaken;
+            
         }
 
         public void SetHaleClothing(ref IPlayer halePlayer)
